@@ -1,0 +1,46 @@
+pip install lightkurve
+from lightkurve import search_targetpixelfile
+#typical import command - takes the installed library and adds it to your project
+pixelfile = search_targetpixelfile("KIC 8462852", quarter=16).download(quality_bitmask='hardest');
+#targetpixelfile refers to the camera pixels produced by telescopes; 5x5 pixels focused on a single location
+#each of these will be a collection of timeframes; 
+#Star with designation "KIC 8462852" where KIC is Kepler
+#Time Quarter: 16 - essentially the fourth year of the Kepler mission
+pixelfile.plot(frame=1);
+#This takes the first frame of the pixel file we just added and displays it
+#(frame=#) where # is the number of the frame you want to view
+#frames by themselves are mostly useless
+lc = pixelfile.to_lightcurve(aperture_mask='all')
+#we essentially take all of the frames over a time period and create a light curve file 'lc'
+lc.time, lc.flux
+#.time command will show you the specific time of the observation
+#.flux command will show you the relevant flux of the brightness that the star was emitting
+lc.plot();
+#MOST IMPORTANT - shows flux over time and creates our graphs
+pixelFile = search_targetpixelfile('KIC 6922244',quarter=4).download()
+#creating another pixel file; searching for 'KIC 6922244' (from Keppler) 
+#in quarter 4 because we know that is when this planet was discovered
+lc = pixelFile.to_lightcurve(aperture_mask=pixelFile.pipeline_mask)
+#immediately converting this into a lightcurve; aperature mask makes things look better
+#Improves the image
+lc.plot()
+#create our plot to visualize our exoplanet
+flat_lc = lc.flatten(window_length=401)
+flat_lc.plot();
+#Makes the graph more flat and less shifted
+folded_lc = flat_lc.fold(period=3.5225)
+folded_lc.plot()
+#takes each of the observations and folds it on top of one another
+import numpy as np
+#importing another library - numpy a mathematical library
+periodogram = flat_lc.to_periodogram(method="bls", period=np.arange(0.3, 10, 0.001))
+#since it looks like it will be less than 10 days, we will look at the possible forms from
+#0.3 days up to 10 days, with a difference of 0.001 days
+periodogram.plot();
+#plots the periodogram findings and displays peaks - largest corresponds to most likely
+best_fit_period = periodogram.period_at_max_power
+print('Best fit period: {:.3f}'.format(best_fit_period))
+#gives the value of the maximum peak from the periodogram essentially giving us the determined period length for our exoplanet
+#{:.#f} is where # is the number of significat figures you would like in you calculation
+#now we can take the max peak value from the periodogram and plug it into our folded plot
+
