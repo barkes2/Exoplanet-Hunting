@@ -1,0 +1,46 @@
+import numpy as np
+import lightkurve as lk
+%matplotlib inline
+
+from lightkurve import search_targetpixelfile
+pixelfile = search_targetpixelfile("TIC 269696438").download_all();
+
+pixelfile
+
+cockmongler=pixelfile[1]
+
+lc = cockmongler.to_lightcurve(aperture_mask='all');
+
+lc.remove_outliers(sigma=5.0, sigma_lower=None, sigma_upper=None, return_mask=False)
+lc.scatter();
+
+search_result = lk.search_lightcurve("TIC 236865152",author="TESS-SPOC",cadence="long")
+search_result
+
+lc_collection = search_result.download_all()
+lc_collection
+
+ax = lc_collection[0].plot(column='sap_flux', label=None)
+for lc in lc_collection[1:]:
+    lc.plot(ax=ax, column='sap_flux', label=None)
+
+lc_stitched = lc_collection.stitch()
+lc_stitched.plot()
+
+periodogram=lc_stitched.to_periodogram(method="bls", period=np.arange(0.5, 200, .01))
+periodogram.plot();
+
+periodogram.show_properties()
+
+best_fit_period = periodogram.period_at_max_power
+print('Best fit period: {:.5f}'.format(best_fit_period))
+
+folded_lc = lc_stitched.fold(period=38.22)
+folded_lc.plot();
+folded_lc.scatter(s=1);
+
+flat_lc = lc.flatten()
+flat_lc.scatter(s=1);
+
+binned_lc = folded_lc.bin(binsize=1)
+binned_lc.scatter();
